@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="referrer" content="no-referrer">
   <title>The Predictor Player</title>
   
@@ -13,7 +13,8 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
       width: 100%;
-      height: 100vh; /* Changed to 100vh to strictly fit the viewport */
+      height: 100%;
+      height: 100dvh; /* Dynamic viewport fix for mobile browsers */
       background: #000;
       overflow: hidden;
     }
@@ -24,7 +25,7 @@
       position: relative;
     }
     
-    /* ── BUG FIX: STRICT SIZING FOR PLYR WRAPPER ── */
+    /* ── STRICT SIZING FOR PLYR WRAPPER ── */
     .plyr, .plyr__video-wrapper {
       width: 100%;
       height: 100% !important;
@@ -32,7 +33,7 @@
     .plyr__video-wrapper video {
       width: 100%;
       height: 100%;
-      object-fit: contain; /* Keeps the video aspect ratio intact without cropping */
+      object-fit: contain;
       background: #000;
     }
 
@@ -85,7 +86,6 @@
       margin-top: 2px;
     }
     
-    /* Adjust watermark height slightly when entering fullscreen to account for UI changes */
     .plyr:fullscreen #custom-watermark,
     .plyr:-webkit-full-screen #custom-watermark {
       bottom: 70px;
@@ -105,12 +105,14 @@
   <script>
     (function () {
       const video = document.getElementById('player');
-      
       const params = new URLSearchParams(location.search);
-      let videoURL = params.get('x');
       
+      // Look for ?dtv= primarily, but catch ?x= just in case
+      let videoURL = params.get('dtv') || params.get('x');
+      
+      // Fallback URL for static testing
       if (!videoURL) {
-          videoURL = 'https://play.gzxdby.com/live/183334344568_2547627111.m3u8'; 
+          videoURL = 'https://cp11.adabmedia.com/hls2/sport.m3u8'; 
       }
 
       function addWatermark(player) {
@@ -121,69 +123,70 @@
           '<span class="wm-rule"></span>' +
           '<span class="wm-text">' +
             '<span class="wm-name">THE <span class="highlight">PREDICTOR</span></span>' +
-            '<span class="wm-url">predictorec.vercel.app</span>' +
+            '<span class="wm-url">predictorwc.vercel.app</span>' +
           '</span>' +
           '<span class="wm-rule right"></span>';
 
         player.elements.container.appendChild(wm);
       }
 
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      if (isIOS) {
-        video.src = videoURL;
-        const player = new Plyr(video, {
-          fullscreen: { enabled: true, fallback: true, iosNative: true }
-        });
-        addWatermark(player);
-        return;
-      }
+      const defaultOptions = {
+        fullscreen: { enabled: true, fallback: true, iosNative: true }
+      };
 
-      if (!Hls.isSupported()) {
-          console.error("HLS is not supported in this browser.");
-          return;
-      }
-
-      const hls = new Hls();
-      hls.loadSource(videoURL);
-      hls.attachMedia(video);
-      
-      hls.on(Hls.Events.MANIFEST_PARSED, function () {
-        const qualities = [];
-        hls.levels.forEach(function (level) {
-          if (!qualities.includes(level.height)) qualities.push(level.height);
-        });
-        qualities.sort(function (a, b) { return b - a; });
+      // 1. Check for standard HLS.js support (Chrome, Android, Windows, etc.)
+      if (Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(videoURL);
+        hls.attachMedia(video);
         
-        const player = new Plyr(video, {
-          settings: ['quality', 'speed', 'fullscreen'],
-          fullscreen: { enabled: true, fallback: true, iosNative: true },
-          quality: {
-            default: qualities[0] || 720,
-            options: qualities,
-            forced: true,
-            onChange: function (q) {
-              hls.levels.forEach(function (level, index) {
-                if (level.height === q) hls.currentLevel = index;
-              });
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          const qualities = [];
+          hls.levels.forEach(function (level) {
+            if (!qualities.includes(level.height)) qualities.push(level.height);
+          });
+          qualities.sort(function (a, b) { return b - a; });
+          
+          const player = new Plyr(video, {
+            ...defaultOptions,
+            settings: ['quality', 'speed', 'fullscreen'],
+            quality: {
+              default: qualities[0] || 720,
+              options: qualities,
+              forced: true,
+              onChange: function (q) {
+                hls.levels.forEach(function (level, index) {
+                  if (level.height === q) hls.currentLevel = index;
+                });
+              }
             }
-          }
+          });
+          
+          addWatermark(player);
         });
+      } 
+      // 2. Fallback to Native Apple HLS (iOS, iPadOS, Mac Safari)
+      else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = videoURL;
+        const player = new Plyr(video, defaultOptions);
         
-        addWatermark(player);
-        
-        document.addEventListener('fullscreenchange', () => {
-          if (document.fullscreenElement && screen.orientation?.lock) {
-            screen.orientation.lock('landscape').catch(() => {});
-          } else if (screen.orientation?.unlock) {
-            screen.orientation.unlock();
-          }
+        // Wait for metadata to load before trying to interact
+        video.addEventListener('loadedmetadata', function() {
+          addWatermark(player);
         });
+      } else {
+        console.error("HLS is not supported in this browser.");
+      }
 
-        video.addEventListener('click', function () {
-          if (player.playing) player.pause();
-          else player.play();
-        });
+      // Auto-landscape on mobile fullscreen
+      document.addEventListener('fullscreenchange', () => {
+        if (document.fullscreenElement && screen.orientation?.lock) {
+          screen.orientation.lock('landscape').catch(() => {});
+        } else if (screen.orientation?.unlock) {
+          screen.orientation.unlock();
+        }
       });
+
     })();
   </script>
 </body>
