@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="referrer" content="no-referrer">
+  <title>The Predictor Player</title>
+  
+  <link rel="stylesheet" href="https://cdn.plyr.io/3.7.8/plyr.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      height: 100dvh; /* Dynamic viewport fix for mobile browsers */
+      background: #000;
+      overflow: hidden;
+    }
+    .player-wrap {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      position: relative;
+    }
+    
+    /* ── STRICT SIZING FOR PLYR WRAPPER ── */
+    .plyr, .plyr__video-wrapper {
+      width: 100%;
+      height: 100% !important;
+    }
+    .plyr__video-wrapper video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+
+    .plyr--video .plyr__control--overlaid {
+      left: 50% !important;
+      top: 50% !important;
+      transform: translate(-50%, -50%) !important;
+    }
+    
+    /* ── THE PREDICTOR WATERMARK STYLES ── */
+    #custom-watermark {
+      position: absolute;
+      left: 50%;
+      bottom: 62px;
+      transform: translateX(-50%);
+      z-index: 5;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      opacity: 0.5;
+      pointer-events: none; 
+      transition: opacity .3s, bottom .3s;
+      font-family: 'Rajdhani', sans-serif;
+      text-align: center;
+    }
+    
+    #custom-watermark .wm-rule {
+      width: 25px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #00a8ff); 
+    }
+    #custom-watermark .wm-rule.right {
+      background: linear-gradient(90deg, #00a8ff, transparent);
+    }
+    
+    #custom-watermark .wm-text { display: flex; flex-direction: column; align-items: center; }
+    #custom-watermark .wm-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 16px;
+      letter-spacing: 4px;
+      color: #fff;
+    }
+    
+    #custom-watermark .wm-name .highlight { color: #00a8ff; } 
+    
+    #custom-watermark .wm-url {
+      font-size: 10px;
+      letter-spacing: 3px;
+      color: #c8d0da;
+      margin-top: 2px;
+    }
+    
+    .plyr:fullscreen #custom-watermark,
+    .plyr:-webkit-full-screen #custom-watermark {
+      bottom: 70px;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="player-wrap">
+    <video id="player" controls playsinline webkit-playsinline preload="metadata"></video>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+  <script src="https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"></script>
+  
+  <script>
+    (function () {
+      const video = document.getElementById('player');
+      const params = new URLSearchParams(location.search);
+      
+      // Look for ?dtv= primarily, but catch ?x= just in case
+      let videoURL = params.get('dtv') || params.get('x');
+      
+      // Fallback URL for static testing
+      if (!videoURL) {
+          videoURL = 'https://cp11.adabmedia.com/hls2/sport.m3u8'; 
+      }
+
+      function addWatermark(player) {
+        const wm = document.createElement('div');
+        wm.id = 'custom-watermark';
+        
+        wm.innerHTML = 
+          '<span class="wm-rule"></span>' +
+          '<span class="wm-text">' +
+            '<span class="wm-name">THE <span class="highlight">PREDICTOR</span></span>' +
+            '<span class="wm-url">predictorwc.vercel.app</span>' +
+          '</span>' +
+          '<span class="wm-rule right"></span>';
+
+        player.elements.container.appendChild(wm);
+      }
+
+      const defaultOptions = {
+        fullscreen: { enabled: true, fallback: true, iosNative: true }
+      };
+
+      // 1. Check for standard HLS.js support (Chrome, Android, Windows, etc.)
+      if (Hls.isSupported()) {
+        const hls = new Hls();
+        hls.loadSource(videoURL);
+        hls.attachMedia(video);
+        
+        hls.on(Hls.Events.MANIFEST_PARSED, function () {
+          const qualities = [];
+          hls.levels.forEach(function (level) {
+            if (!qualities.includes(level.height)) qualities.push(level.height);
+          });
+          qualities.sort(function (a, b) { return b - a; });
+          
+          const player = new Plyr(video, {
+            ...defaultOptions,
+            settings: ['quality', 'speed', 'fullscreen'],
+            quality: {
+              default: qualities[0] || 720,
+              options: qualities,
+              forced: true,
+              onChange: function (q) {
+                hls.levels.forEach(function (level, index) {
+                  if (level.height === q) hls.currentLevel = index;
+                });
+              }
+            }
+          });
+          
+          addWatermark(player);
+        });
+      } 
+      // 2. Fallback to Native Apple HLS (iOS, iPadOS, Mac Safari)
+      else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = videoURL;
+        const player = new Plyr(video, defaultOptions);
+        
+        // Wait for metadata to load before trying to interact
+        video.addEventListener('loadedmetadata', function() {
+          addWatermark(player);
+        });
+      } else {
+        console.error("HLS is not supported in this browser.");
+      }
+
+      // Auto-landscape on mobile fullscreen
+      document.addEventListener('fullscreenchange', () => {
+        if (document.fullscreenElement && screen.orientation?.lock) {
+          screen.orientation.lock('landscape').catch(() => {});
+        } else if (screen.orientation?.unlock) {
+          screen.orientation.unlock();
+        }
+      });
+
+    })();
+  </script>
+</body>
+</html>
