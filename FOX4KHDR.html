@@ -1,159 +1,114 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-  <meta name="referrer" content="no-referrer">
-  <title>The Predictor Player</title>
-  
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shaka-player@5.1.8/dist/controls.css">
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@800&display=swap" rel="stylesheet">
-  
-  <style>
-    * { margin:0; padding:0; box-sizing:border-box }
-    html, body {
-      width: 100%;
-      height: 100%;
-      height: 100dvh; 
-      background: #000;
-      overflow: hidden;
-      font-family: 'Segoe UI', Roboto, sans-serif;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-    
-    .shaka-video-container {
-      position: fixed;
-      inset: 0;
-      background: #000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    
-    video {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      background: #000;
-    }
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="referrer" content="no-referrer">
+<title>Predictor</title>
+<!-- Using Shaka Player 5.1.8 for best DASH and DRM support -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shaka-player@5.1.8/dist/controls.css">
+<style>
+/* Base Styles */
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Segoe UI',Roboto,sans-serif;-webkit-user-select:none;user-select:none}
+.shaka-video-container{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center}
+video{width:100%;height:100%;object-fit:contain;background:#000}
 
-    .shaka-spinner-container, .shaka-spinner, .shaka-spinner-svg { display: none !important; }
-    .shaka-controls-container button { color: #fff !important; }
+/* Hide Default Shaka Spinner */
+.shaka-spinner-container,.shaka-spinner,.shaka-spinner-svg{display:none!important}
+.shaka-controls-container button{color:#fff!important}
 
-    #loader {
-      position: absolute;
-      inset: 0;
-      background: rgba(0,0,0,.6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 9;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity .2s;
-    }
-    #loader.on { opacity: 1; }
-    .spin {
-      width: 40px;
-      height: 40px;
-      border: 4px solid rgba(255,255,255,.2);
-      border-top-color: #00a8ff; 
-      border-radius: 50%;
-      animation: sp .8s linear infinite;
-    }
-    @keyframes sp { to { transform: rotate(360deg); } }
+/* Custom Loading Spinner */
+#loader{position:absolute;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:9;opacity:0;pointer-events:none;transition:opacity .2s}
+#loader.on{opacity:1}
+.spin{width:40px;height:40px;border:4px solid rgba(255,255,255,.2);border-top-color:#e63946;border-radius:50%;animation:sp .8s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
 
-    #wm {
-      position: absolute;
-      z-index: 5;
-      pointer-events: none;
-      display: flex;
-      align-items: center;
-      opacity: 0.65;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
-      transition: opacity .25s, bottom .25s, right .25s;
-      bottom: 20px;
-      right: 20px;
-    }
-    .wm-text {
-      font-family: 'Orbitron', 'Segoe UI', sans-serif;
-      font-weight: 800;
-      font-size: 18px;
-      letter-spacing: 1px;
-      white-space: nowrap;
-      text-transform: uppercase;
-    }
-    .wm-text .one { color: #ffffff; }
-    .wm-text .sports { color: #00a8ff; }
+/* OneSports Text Watermark */
+#wm{
+  position:absolute;
+  z-index:5;
+  pointer-events:none;
+  display:flex;
+  align-items:center;
+  opacity:0.65;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,0.8));
+  transition:opacity .25s, bottom .25s, right .25s;
+  bottom: 20px;
+  right: 20px;
+}
+.wm-text {
+  font-family: 'Orbitron', 'Segoe UI', sans-serif;
+  font-weight: 800;
+  font-size: 18px;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+.wm-text .one { color: #ffffff; }
+.wm-text .sports { color: #e63946; }
 
-    /* Custom Support Screen */
-    #support-screen {
-      display: none;
-      position: absolute;
-      inset: 0;
-      background: #000;
-      z-index: 999;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 20px;
-    }
-    #support-screen.show { display: flex; }
-    #support-screen h2 {
-      font-family: 'Bebas Neue', sans-serif;
-      color: #00a8ff;
-      font-size: 32px;
-      letter-spacing: 2px;
-      margin-bottom: 10px;
-    }
-    #support-screen p { color: #ccc; font-size: 16px; max-width: 450px; font-family: sans-serif; line-height: 1.5; }
-
-    .controls-visible #wm { bottom: 65px; }
-  </style>
+/* Move watermark up when controls are active so they don't overlap */
+.controls-visible #wm {
+  bottom: 65px; 
+}
+</style>
 </head>
 <body>
-
 <div class="shaka-video-container" id="pc">
+  <!-- Video element -->
   <video id="v" autoplay playsinline muted preload="metadata"></video>
-
-  <!-- Universal Support/Codec Error Screen -->
-  <div id="support-screen">
-    <h2>BROWSER NOT SUPPORTED</h2>
-    <p id="support-msg">Your current browser or device cannot decode this 4K HEVC broadcast. <br><br><b>Please switch to Google Chrome or Microsoft Edge on a PC to watch this match.</b></p>
-  </div>
-
+  
+  <!-- Watermark -->
   <div id="wm">
-    <div class="wm-text"><span class="one">THE </span><span class="sports">PREDICTOR</span></div>
+    <div class="wm-text"><span class="one">Hello</span><span class="sports">Sports</span></div>
   </div>
-
+  
+  <!-- Loading Spinner -->
   <div id="loader"><div class="spin"></div></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/shaka-player@5.1.8/dist/shaka-player.ui.min.js"></script>
 <script>
-const STREAM_URL = "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/enc/ds6pjm8gzg/out/v1/fc40f22f10374517a2784e1d97cb23f4/cenc.mpd";
-const KEY_ID = "1f68713028d439ec03be07f56c1d6213";
-const KEY = "20093db6455160fffed4c394def3193d";
+/* =======================================================
+   STREAM AND DRM CONFIGURATION 
+======================================================= */
+const STREAM_URL = "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/enc/ajfoeddkbz/out/v1/b78800b9b2304879b15843f455836829/cenc.mpd";
 
-function triggerCodecError() {
-  document.getElementById('loader').classList.remove('on');
-  document.getElementById('support-screen').classList.add('show');
+// 🔓 Decryption keys extracted from source (FOX Channel):
+const KEY_ID = "f6564ec2aee819046328a0e153be574d";
+const KEY = "ff46a8a1031eb27ef22576a077c98ab7";
+/* ======================================================= */
+
+function onPlayerErrorEvent(event) {
+  onPlayerError(event.detail);
+}
+
+function onPlayerError(error) {
+  let errorMsg = `Error code: ${error.code}`;
+  if (error.category === shaka.util.Error.Category.NETWORK) {
+    errorMsg += ` (Network Error).`;
+  } else if (error.category === shaka.util.Error.Category.DRM) {
+    errorMsg += ` (DRM Error - Did you forget to add the decryption key?).`;
+  } else if (error.category === shaka.util.Error.Category.MANIFEST) {
+    errorMsg += ` (Manifest Error).`;
+  }
+  if (error.data && error.data.length > 0) {
+    errorMsg += ` | Details: ${error.data.join(', ')}`;
+  }
+  console.error(`CRITICAL ERROR: ${errorMsg}`);
+  
+  if (error.code === 6001 || error.code === 6013 || KEY === "PUT_YOUR_DECRYPTION_KEY_HERE") {
+      alert("DRM Error: This stream is encrypted. You must provide the correct Decryption Key in the HTML code.");
+  }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
   shaka.polyfill.installAll();
-  
-  // Instant block for Apple devices (they physically cannot run ClearKey DASH)
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  if (isIOS) {
-    triggerCodecError();
-    return;
-  }
-
   if (!shaka.Player.isBrowserSupported()) {
-    triggerCodecError();
+    console.error('Browser not supported!');
     return;
   }
 
@@ -170,13 +125,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       'play_pause', 'mute', 'volume', 'time_and_duration',
       'spacer', 'picture_in_picture', 'quality', 'fullscreen'
     ],
-    seekBarColors: { base: 'rgba(255,255,255,0.3)', buffered: 'rgba(255,255,255,0.6)', played: '#00a8ff' },
+    seekBarColors: { base: 'rgba(255,255,255,0.3)', buffered: 'rgba(255,255,255,0.6)', played: '#e63946' },
+    fadeDelay: 3,
     addBigPlayButton: true,
   });
 
-  player.addEventListener('error', (e) => {
-    console.error("Shaka Player Error:", e.detail || e);
-  });
+  player.addEventListener('error', onPlayerErrorEvent);
 
   player.addEventListener('buffering', (e) => {
     loader.classList.toggle('on', e.buffering);
@@ -190,36 +144,56 @@ document.addEventListener('DOMContentLoaded', async () => {
     observer.observe(controlsContainer, { attributes: true, attributeFilter: ['shown'] });
   }
 
-  player.configure({
-    drm: { clearKeys: { [KEY_ID]: KEY } },
-    // We request standard H.264 first, but if the stream is strictly 4K HEVC, it will ignore this.
-    preferredVideoCodecs: ['avc1', 'avc3', 'h264'], 
-    abr: { enabled: true, defaultBandwidthEstimate: 5000000 },
-    streaming: { jumpLargeGaps: true }
-  });
+  const playerConfig = {
+    abr: {
+      enabled: true, 
+      defaultBandwidthEstimate: 10000000, 
+    },
+    manifest: {
+      defaultPresentationDelay: 4,
+      dash: { ignoreSuggestedPresentationDelay: true, ignoreMinBufferTime: true, autoCorrectDrift: true }
+    },
+    streaming: {
+      bufferingGoal: 10,
+      rebufferingGoal: 2,
+      bufferBehind: 15,
+      lowLatencyMode: true,
+      jumpLargeGaps: true,
+      retryParameters: {
+        maxAttempts: 5,
+        baseDelay: 1000,
+        timeout: 20000
+      }
+    }
+  };
+
+  // 🔓 Apply DRM Keys
+  if (KEY_ID && KEY && KEY !== "PUT_YOUR_DECRYPTION_KEY_HERE") {
+    playerConfig.drm = {
+      clearKeys: {
+        [KEY_ID]: KEY
+      }
+    };
+  }
+
+  player.configure(playerConfig);
 
   loader.classList.add('on');
   try {
     await player.load(STREAM_URL);
     loader.classList.remove('on');
-
+    
     if (player.isLive()) {
       videoEl.currentTime = player.seekRange().end;
     }
-    
-    await videoEl.play();
 
-    // 🔥 THE STALL WATCHDOG: Detects the "Black Screen of Death"
-    // If the browser accepts the stream but fails to decode the video, the timer stays at 0.
-    setTimeout(() => {
-        if (!videoEl.paused && videoEl.currentTime < 1) {
-            console.warn("Codec Decode Failure: Stream loaded but video is not advancing.");
-            triggerCodecError();
-        }
-    }, 5000);
-
+    try {
+      await videoEl.play();
+    } catch (e) {
+      console.warn('Autoplay prevented by browser:', e);
+    }
   } catch (e) {
-    console.error("Load failed:", e);
+    onPlayerErrorEvent({detail: e});
     loader.classList.remove('on');
   }
 });
