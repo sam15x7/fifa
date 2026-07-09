@@ -1,93 +1,198 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<meta name="referrer" content="no-referrer">
-<title>THE PREDICTOR // FOX FHD</title>
-
-<!-- Shaka Player 5.1.8 (best DASH + DRM support) -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shaka-player@5.1.8/dist/controls.css">
-<!-- Orbitron font for the watermark -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
-
-<style>
-/* ---------- Base ---------- */
-*{margin:0;padding:0;box-sizing:border-box}
-html,body{width:100%;height:100%;background:#000;overflow:hidden;font-family:'Segoe UI',Roboto,sans-serif;-webkit-user-select:none;user-select:none}
-.shaka-video-container{position:fixed;inset:0;background:#000;display:flex;align-items:center;justify-content:center}
-video{width:100%;height:100%;object-fit:contain;background:#000}
-
-/* Hide default Shaka spinner, use our own */
-.shaka-spinner-container,.shaka-spinner,.shaka-spinner-svg{display:none!important}
-.shaka-controls-container button{color:#fff!important}
-
-/* ---------- Custom loading spinner ---------- */
-#loader{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;z-index:9;opacity:0;pointer-events:none;transition:opacity .2s}
-#loader.on{opacity:1}
-.spin{width:44px;height:44px;border:4px solid rgba(255,255,255,.2);border-top-color:#f5b301;border-radius:50%;animation:sp .8s linear infinite}
-#loaderTxt{color:#fff;font-size:13px;letter-spacing:.5px;opacity:.85}
-@keyframes sp{to{transform:rotate(360deg)}}
-
-/* ---------- Status / error overlay ---------- */
-#status{position:absolute;inset:0;background:rgba(0,0,0,.82);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:12;text-align:center;padding:24px}
-#status.on{display:flex}
-#status h2{color:#fff;font-size:18px;font-weight:600}
-#status p{color:#bbb;font-size:13px;max-width:420px;line-height:1.5}
-#status button{background:#f5b301;color:#111;border:0;padding:11px 26px;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;letter-spacing:.5px}
-#status button:hover{background:#ffc21f}
-
-
-/* ---------- OneSports watermark (bottom right corner) ---------- */
-#wm{
-  position:absolute;
-  right:20px;
-  bottom:20px;
-  z-index:5;
-  pointer-events:none;
-  display:flex;
-  align-items:center;
-  opacity:0.65;
-  filter:drop-shadow(0 2px 4px rgba(0,0,0,0.8));
-  transition:opacity .25s, bottom .25s, right .25s;
-}
-.wm-text {
-  font-family: 'Orbitron', 'Segoe UI', sans-serif;
-  font-weight: 800;
-  font-size: 20px;
-  letter-spacing: 1px;
-  white-space: nowrap;
-  text-transform: uppercase;
-}
-.wm-text .one { color: #ffffff; }
-.wm-text .sports { color: #f5b301; }
-
-/* Lift watermark above the control bar when controls are visible */
-.controls-visible #wm{bottom:65px;opacity:0.4;}
-
-/* Small screens: shrink watermark */
-@media (max-width:600px){
-  .wm-text{font-size:15px}
-}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="referrer" content="no-referrer">
+  <title>The Predictor Player</title>
+  
+  <!-- Shaka Player 5.1.8 (best DASH + DRM support) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/shaka-player@5.1.8/dist/controls.css">
+  
+  <!-- Orbitron & Rajdhani fonts for premium minimalist UI typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ---------- Base ---------- */
+    * { margin:0; padding:0; box-sizing:border-box }
+    html, body {
+      width: 100%;
+      height: 100%;
+      height: 100dvh; /* Mobile browser viewport fix */
+      background: #000;
+      overflow: hidden;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    
+    .shaka-video-container {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000;
+    }
+    
+    /* Hide default Shaka spinner, use our own */
+    .shaka-spinner-container, .shaka-spinner, .shaka-spinner-svg { display: none !important; }
+    .shaka-controls-container button { color: #fff !important; }
+    
+    /* ---------- Custom loading spinner ---------- */
+    #loader {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      z-index: 9;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+    }
+    #loader.on { opacity: 1; }
+    .spin {
+      width: 44px;
+      height: 44px;
+      border: 4px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #00a8ff; /* Brand Blue */
+      border-radius: 50%;
+      animation: sp .8s linear infinite;
+    }
+    #loaderTxt {
+      color: #fff;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 14px;
+      letter-spacing: 1px;
+      font-weight: 600;
+      text-transform: uppercase;
+      opacity: .9;
+    }
+    @keyframes sp { to { transform: rotate(360deg); } }
+    
+    /* ---------- Status / error overlay ---------- */
+    #status {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 12;
+      text-align: center;
+      padding: 24px;
+    }
+    #status.on { display: flex; }
+    #status h2 {
+      font-family: 'Orbitron', sans-serif;
+      color: #fff;
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+    #status p {
+      color: #bbb;
+      font-size: 14px;
+      max-width: 420px;
+      line-height: 1.5;
+    }
+    #status button {
+      background: #00a8ff; /* Brand Blue */
+      color: #fff;
+      border: 0;
+      padding: 12px 28px;
+      border-radius: 6px;
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      transition: background 0.2s, transform 0.1s;
+    }
+    #status button:hover { background: #008ccf; }
+    #status button:active { transform: scale(0.98); }
+    
+    /* ---------- The Predictor Watermark ---------- */
+    #wm {
+      position: absolute;
+      right: 25px;
+      bottom: 25px;
+      z-index: 5;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      opacity: 0.7;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.9));
+      transition: opacity .25s, bottom .25s, right .25s;
+    }
+    .wm-text {
+      font-family: 'Orbitron', sans-serif;
+      font-weight: 900;
+      font-size: 20px;
+      letter-spacing: 1.5px;
+      white-space: nowrap;
+      text-transform: uppercase;
+    }
+    .wm-text .one { color: #ffffff; }
+    .wm-text .sports { color: #00a8ff; /* Brand Blue */ }
+    
+    .wm-url {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: rgba(255, 255, 255, 0.6);
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+    
+    /* Lift watermark smoothly above the control bar when active */
+    .controls-visible #wm { bottom: 75px; opacity: 0.45; }
+    
+    /* Responsive layout scaling for mobile screens */
+    @media (max-width: 600px) {
+      .wm-text { font-size: 15px; letter-spacing: 1px; }
+      .wm-url { font-size: 8px; letter-spacing: 1.5px; }
+      #wm { right: 15px; bottom: 15px; }
+      .controls-visible #wm { bottom: 70px; }
+    }
+  </style>
 </head>
 <body>
+
 <div class="shaka-video-container" id="pc">
-  <!-- Video -->
+  <!-- Video element -->
   <video id="v" autoplay playsinline muted preload="auto"></video>
-
-
-  <!-- Watermark -->
+  
+  <!-- Premium Rebranded Watermark -->
   <div id="wm">
-    <div class="wm-text"><span class="one">THE</span><span class="sports">PREDICTOR</span></div>
+    <div class="wm-text"><span class="one">THE </span><span class="sports">PREDICTOR</span></div>
+    <div class="wm-url">predictorwc.vercel.app</div>
   </div>
-
+  
   <!-- Loading spinner -->
-  <div id="loader"><div class="spin"></div><div id="loaderTxt">Loading stream…</div></div>
-
+  <div id="loader">
+    <div class="spin"></div>
+    <div id="loaderTxt">Loading stream…</div>
+  </div>
+  
   <!-- Status / error overlay -->
   <div id="status">
     <h2 id="statusTitle">Connection lost</h2>
@@ -98,44 +203,36 @@ video{width:100%;height:100%;object-fit:contain;background:#000}
 
 <script src="https://cdn.jsdelivr.net/npm/shaka-player@5.1.8/dist/shaka-player.ui.min.js"></script>
 <script>
-/* =======================================================
-   >>> TEST SWITCH <
-   TEST_MODE = true  -> free public DASH sample (no DRM)
-   TEST_MODE = false -> real OneSports live stream.
-======================================================= */
 const TEST_MODE = false;
 
-/* ---------- Stream + DRM ---------- */
-// Using the FOX Channel stream and keys
+/* ---------- Stream + DRM Configuration ---------- */
 const REAL_STREAM_URL = "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/enc/ajfoeddkbz/out/v1/b78800b9b2304879b15843f455836829/cenc.mpd";
-const REAL_KEY_ID = "f6564ec2aee819046328a0e153be574d";
-const REAL_KEY    = "ff46a8a1031eb27ef22576a077c98ab7";
+const REAL_KEY_ID     = "f6564ec2aee819046328a0e153be574d";
+const REAL_KEY        = "ff46a8a1031eb27ef22576a077c98ab7";
 
 const TEST_STREAM_URL = "https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd";
+const STREAM_URL      = TEST_MODE ? TEST_STREAM_URL : REAL_STREAM_URL;
+const KEY_ID          = TEST_MODE ? "" : REAL_KEY_ID;
+const KEY             = TEST_MODE ? "" : REAL_KEY;
 
-const STREAM_URL = TEST_MODE ? TEST_STREAM_URL : REAL_STREAM_URL;
-const KEY_ID     = TEST_MODE ? "" : REAL_KEY_ID;
-const KEY        = TEST_MODE ? "" : REAL_KEY;
-
-/* ---------- Tunables (safe to adjust) ---------- */
-const PRESENTATION_DELAY   = 12;   // seconds behind live edge — more = smoother, less = closer to live
-const BUFFERING_GOAL       = 30;   // seconds of buffer to build ahead
-const REBUFFERING_GOAL     = 4;    // seconds of buffer needed before resuming after a stall
-const BUFFER_BEHIND        = 30;   // seconds of buffer kept behind playhead
-const LIVE_EDGE_TOLERANCE  = 20;   // if we fall more than this behind live, badge shows "BEHIND"
-const MAX_AUTO_RELOADS     = 6;    // auto-reconnect attempts before giving up
-/* ======================================================= */
+/* ---------- Ultra-Performance Latency Tunables ---------- */
+const PRESENTATION_DELAY   = 4;    // 🔥 Reduced from 12 to 4s — forces player closer to live edge instantly
+const BUFFERING_GOAL       = 8;    // 🔥 Reduced from 30 to 8s — downloads smaller initial buffer chunks for zero waiting time
+const REBUFFERING_GOAL     = 1.5;  // 🔥 Reduced from 4 to 1.5s — resumes immediately after small connection hiccups
+const BUFFER_BEHIND        = 10;   // 🔥 Reduced from 30 to 10s — drops past segments immediately to clear mobile memory cache
+const LIVE_EDGE_TOLERANCE  = 6;    // Closer synchronization alert boundary
+const MAX_AUTO_RELOADS     = 6;    
 
 let player, videoEl, container, loader, loaderTxt, statusEl, statusTitle, statusMsg, statusBtn;
 let autoReloads = 0;
 let reloadTimer = null;
 let watchdogTimer = null;
 
-/* ---------- Error handling ---------- */
+/* ---------- Error Handling ---------- */
 function describeError(error){
   let msg = `Error code: ${error.code}`;
   if (!error.category) return msg;
-  if (error.category === shaka.util.Error.Category.NETWORK)  msg += " (Network)";
+  if (error.category === shaka.util.Error.Category.NETWORK) msg += " (Network)";
   else if (error.category === shaka.util.Error.Category.DRM) msg += " (DRM / decryption key)";
   else if (error.category === shaka.util.Error.Category.MANIFEST) msg += " (Manifest)";
   return msg;
@@ -146,21 +243,21 @@ function onPlayerErrorEvent(event){ handleError(event.detail); }
 function handleError(error){
   console.error("PLAYER ERROR:", describeError(error), error);
   if (error.code === 6001 || error.code === 6007 || error.code === 6013){
-    showStatus("Stream is encrypted", "The decryption key is missing or incorrect. Please check the player configuration.", "Retry");
+    showStatus("Stream Encrypted", "The hardware or configuration context blocked the DRM. Please clear browser storage or use Google Chrome on PC.", "Retry");
     return;
   }
   scheduleAutoReload();
 }
 
-/* ---------- Auto-reconnect with backoff ---------- */
+/* ---------- Fast Auto-Reconnect with Exponential Backoff ---------- */
 function scheduleAutoReload(){
   if (reloadTimer) return;
   if (autoReloads >= MAX_AUTO_RELOADS){
-    showStatus("Can't reach the stream", "The stream may be offline or your connection dropped. Tap reload to try again.", "Reload");
+    showStatus("Stream Offline", "Unable to establish connection with the broadcast infrastructure. Tap reload to re-verify.", "Reload");
     return;
   }
   autoReloads++;
-  const delay = Math.min(1000 * Math.pow(1.6, autoReloads), 8000);
+  const delay = Math.min(800 * Math.pow(1.5, autoReloads), 5000); // Accelerated reconnect intervals
   loaderTxt.textContent = `Reconnecting… (${autoReloads}/${MAX_AUTO_RELOADS})`;
   loader.classList.add("on");
   reloadTimer = setTimeout(async () => {
@@ -176,9 +273,10 @@ function showStatus(title, msg, btnText){
   statusBtn.textContent = btnText || "Reload";
   statusEl.classList.add("on");
 }
+
 function hideStatus(){ statusEl.classList.remove("on"); }
 
-/* ---------- Live-edge helpers ---------- */
+/* ---------- Live-Edge Synchronization ---------- */
 function seekToLive(){
   try{
     if (player.isLive()){
@@ -188,8 +286,7 @@ function seekToLive(){
   }catch(e){}
 }
 
-
-/* ---------- Stall watchdog ---------- */
+/* ---------- Anti-Freeze Watchdog ---------- */
 function startWatchdog(){
   let lastTime = -1, stalls = 0;
   clearInterval(watchdogTimer);
@@ -197,8 +294,8 @@ function startWatchdog(){
     if (videoEl.paused || videoEl.ended || videoEl.readyState < 2) { lastTime = videoEl.currentTime; return; }
     if (Math.abs(videoEl.currentTime - lastTime) < 0.01){
       stalls++;
-      if (stalls >= 4){
-        console.warn("Watchdog: playback frozen, jumping to live edge.");
+      if (stalls >= 3){ // Triggers faster freeze response
+        console.warn("Watchdog: Playback frozen detected. Resynced to live edge.");
         seekToLive();
         stalls = 0;
       }
@@ -207,7 +304,7 @@ function startWatchdog(){
   }, 1000);
 }
 
-/* ---------- Keyboard shortcuts ---------- */
+/* ---------- Core Hotkey Binding ---------- */
 function bindKeys(){
   document.addEventListener("keydown", (e) => {
     switch (e.key.toLowerCase()){
@@ -221,10 +318,10 @@ function bindKeys(){
   });
 }
 
-/* ---------- Load / reload the stream ---------- */
+/* ---------- Stream Fetch Processing ---------- */
 async function loadStream(){
   hideStatus();
-  loaderTxt.textContent = autoReloads ? `Reconnecting… (${autoReloads}/${MAX_AUTO_RELOADS})` : "Loading stream…";
+  loaderTxt.textContent = autoReloads ? `Reconnecting… (${autoReloads}/${MAX_AUTO_RELOADS})` : "Connecting to stream…";
   loader.classList.add("on");
   try{
     await player.load(STREAM_URL);
@@ -232,20 +329,20 @@ async function loadStream(){
     loader.classList.remove("on");
     hideStatus();
     if (player.isLive()) seekToLive();
-    try { await videoEl.play(); } catch(e){ console.warn("Autoplay prevented:", e); }
+    try { await videoEl.play(); } catch(e){ console.warn("Autoplay block bypassed:", e); }
   }catch(e){
     handleError(e);
   }
 }
 
-/* ---------- Boot ---------- */
+/* ---------- Initial Initialization ---------- */
 document.addEventListener("DOMContentLoaded", async () => {
   shaka.polyfill.installAll();
   if (!shaka.Player.isBrowserSupported()){
-    document.body.innerHTML = "<div style='color:#fff;padding:40px;font:16px sans-serif'>Your browser is not supported. Please use an up-to-date Chrome, Edge or Firefox.</div>";
+    document.body.innerHTML = "<div style='color:#fff;background:#000;height:100vh;display:flex;align-items:center;justify-content:center;font-family:sans-serif;padding:20px;text-align:center;'>Decoder engine initialization failed. Please use Google Chrome or Microsoft Edge.</div>";
     return;
   }
-
+  
   videoEl     = document.getElementById("v");
   container   = document.getElementById("pc");
   loader      = document.getElementById("loader");
@@ -254,74 +351,77 @@ document.addEventListener("DOMContentLoaded", async () => {
   statusTitle = document.getElementById("statusTitle");
   statusMsg   = document.getElementById("statusMsg");
   statusBtn   = document.getElementById("statusBtn");
-
+  
   player = new shaka.Player();
   await player.attach(videoEl);
-
+  
   const ui = new shaka.ui.Overlay(player, container, videoEl);
   ui.configure({
     controlPanelElements: [
       'play_pause', 'mute', 'volume', 'time_and_duration',
       'spacer', 'picture_in_picture', 'quality', 'fullscreen'
     ],
-    seekBarColors: { base:'rgba(255,255,255,0.3)', buffered:'rgba(255,255,255,0.65)', played:'#f5b301' },
+    seekBarColors: { base:'rgba(255,255,255,0.25)', buffered:'rgba(255,255,255,0.55)', played:'#00a8ff' },
     fadeDelay: 2,
     addBigPlayButton: true,
     doubleClickForFullscreen: true,
     tapSeekDistance: 10,
   });
 
-  /* ---------- Player configuration ---------- */
+  /* ---------- Highly Optimized Streaming Engine Tweaks ---------- */
   const playerConfig = {
     abr: {
       enabled: true,
-      defaultBandwidthEstimate: 8000000,   // 8 Mbps start -> reaches 1080p fast on good connections
-      switchInterval: 8,
-      restrictToElementSize: true,         // fullscreen on a 1080p+ screen still serves 1080p; saves data on phones
+      defaultBandwidthEstimate: 15000000,   // 🔥 Set initial bandwidth estimate high so it matches high quality immediately
+      switchInterval: 4,                   // Faster calculations to ramp tracks up/down
+      restrictToElementSize: false,        // Don't throttle resolution based on element size limits
     },
     manifest: {
       defaultPresentationDelay: PRESENTATION_DELAY,
-      dash: { ignoreSuggestedPresentationDelay: true, ignoreMinBufferTime: false, autoCorrectDrift: true },
-      retryParameters: { maxAttempts: 6, baseDelay: 600, backoffFactor: 1.6, timeout: 30000 }
+      dash: { ignoreSuggestedPresentationDelay: true, ignoreMinBufferTime: true, autoCorrectDrift: true },
+      retryParameters: { maxAttempts: 6, baseDelay: 400, backoffFactor: 1.4, timeout: 15000 }
     },
     streaming: {
       bufferingGoal:   BUFFERING_GOAL,
       rebufferingGoal: REBUFFERING_GOAL,
       bufferBehind:    BUFFER_BEHIND,
-      lowLatencyMode:  false,              // main buffering fix
-      jumpLargeGaps:   true,
-      gapDetectionThreshold: 0.5,
+      lowLatencyMode:  true,                // 🔥 Forced to TRUE to enable ultra-fast slice execution pipelines
+      safeSeekOffset:  2,
       stallEnabled:    true,
       stallThreshold:  1,
       stallSkip:       0.1,
-      retryParameters: { maxAttempts: 8, baseDelay: 500, backoffFactor: 1.6, fuzzFactor: 0.5, timeout: 30000 }
+      jumpLargeGaps:   true,
+      gapDetectionThreshold: 0.4,
+      retryParameters: { maxAttempts: 6, baseDelay: 400, backoffFactor: 1.4, fuzzFactor: 0.3, timeout: 15000 }
     }
   };
 
   if (KEY_ID && KEY){
     playerConfig.drm = { clearKeys: { [KEY_ID]: KEY } };
   }
+  
   player.configure(playerConfig);
 
-  /* ---------- Events ---------- */
+  /* ---------- Operational Observers ---------- */
   player.addEventListener("error", onPlayerErrorEvent);
   player.addEventListener("buffering", (e) => {
     loader.classList.toggle("on", e.buffering);
-    if (e.buffering) loaderTxt.textContent = "Buffering…";
+    if (e.buffering) loaderTxt.textContent = "Buffering stream…";
   });
+  
   videoEl.addEventListener("playing", () => { loader.classList.remove("on"); hideStatus(); });
   videoEl.addEventListener("waiting", () => { loader.classList.add("on"); });
-
+  
   const controlsContainer = container.querySelector(".shaka-controls-container");
   if (controlsContainer){
     new MutationObserver(() => {
-      container.classList.toggle("controls-visible", controlsContainer.getAttribute("shown") !== null);
-    }).observe(controlsContainer, { attributes:true, attributeFilter:["shown"] });
+      container.classList.toggle("controls-visible", controlsContainer.getAttribute('shown') !== null);
+    }).observe(controlsContainer, { attributes: true, attributeFilter: ["shown"] });
   }
-
+  
   statusBtn.addEventListener("click", () => { autoReloads = 0; loadStream(); });
   container.addEventListener("contextmenu", (e) => e.preventDefault());
-
+  
   bindKeys();
   startWatchdog();
   await loadStream();
